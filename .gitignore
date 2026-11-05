@@ -1,0 +1,21 @@
+# 依赖和构建缓存
+node_modules/
+.wrangler/
+.cache/
+
+# 本地密钥和环境变量（wrangler 本地开发用 .dev.vars）
+.dev.vars*
+!.dev.vars.example
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 日志
+*.log
+
+# 系统和编辑器文件
+.DS_Store
+.vscode/
+.idea/

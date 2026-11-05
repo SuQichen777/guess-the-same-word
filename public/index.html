@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff4dc" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1620" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="两个人各写一个词，直到写出同一个。">
+  <!-- 尽早应用手动选择的主题，避免页面先闪一下另一种颜色 -->
+  <script>try { var t = localStorage.getItem("sw.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+  <title>同词相遇</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/zcool-qingke.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/zcool-kuaile.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main id="app">
+    <!-- ============ 首页 ============ -->
+    <section id="home" class="screen">
+      <button class="mini-btn theme-btn hero-theme" type="button"></button>
+      <header class="hero">
+        <h1 class="ransom big" aria-label="同词相遇"><span>同</span><span>词</span><span>相</span><span>遇</span></h1>
+        <p class="strip-label">两个人各写一个词，直到写出同一个</p>
+      </header>
+
+      <p id="home-msg" class="narr alert" role="alert" hidden></p>
+
+      <div class="panel stack">
+        <label class="field">
+          <span class="tag">你的昵称</span>
+          <input id="name" class="input" maxlength="16" placeholder="比如：小张" autocomplete="nickname" enterkeyhint="done">
+        </label>
+        <button id="create" class="sticker red wide" type="button">创建房间</button>
+        <div class="divider"><span>或者加入朋友的房间</span></div>
+        <form id="join-form" class="row">
+          <input id="code" class="input code-input" maxlength="4" placeholder="ABCD" aria-label="房间码"
+                 autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+          <button id="join" class="sticker blue" type="submit">加入</button>
+        </form>
+        <button id="resume" class="link-btn" type="button" hidden></button>
+      </div>
+
+      <details class="panel rules">
+        <summary>怎么玩？</summary>
+        <ol>
+          <li>每轮两个人各自偷偷写一个词。</li>
+          <li>都写好了就一起看结果：写的一样，直接赢！</li>
+          <li>不一样的话，两人各自选「我觉得一样」或「下一轮」，都选「一样」也算赢。</li>
+          <li>下一轮写一个能把上一轮两个词连起来的词。</li>
+          <li>谁用过的词都不能再用。看看你们几轮能相遇。</li>
+        </ol>
+      </details>
+    </section>
+
+    <!-- ============ 房间 ============ -->
+    <section id="room" class="screen" hidden>
+      <header class="topbar">
+        <div class="ransom mini" aria-hidden="true"><span>同</span><span>词</span><span>相</span><span>遇</span></div>
+        <button id="share" class="tape-chip" type="button" aria-label="分享房间">房间 <b id="room-code">----</b></button>
+        <button class="mini-btn theme-btn" type="button"></button>
+        <button id="leave" class="mini-btn" type="button">离开</button>
+      </header>
+
+      <div id="conn" class="narr conn" role="status" hidden></div>
+
+      <div class="players">
+        <div id="me" class="player me">
+          <span id="me-avatar" class="av me">?</span>
+          <div class="pinfo"><div id="me-name" class="pname">你</div><div id="me-status" class="pstatus"></div></div>
+        </div>
+        <span class="vs" aria-hidden="true">VS</span>
+        <div id="opp" class="player them">
+          <span id="opp-avatar" class="av them">?</span>
+          <div class="pinfo"><div id="opp-name" class="pname">等待加入…</div><div id="opp-status" class="pstatus"></div></div>
+        </div>
+      </div>
+
+      <!-- 等人 -->
+      <div id="waiting" class="panel center" hidden>
+        <p class="tag">把房间码发给朋友</p>
+        <div id="big-code" class="ransom code" aria-live="polite"></div>
+        <button id="share2" class="sticker red" type="button">发送邀请链接</button>
+        <p class="dots-line">等朋友加入<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>
+      </div>
+
+      <!-- 各自写词 -->
+      <div id="play" hidden>
+        <div class="round-head">
+          <svg class="burst round-burst" viewBox="0 0 100 76" aria-hidden="true">
+            <polygon class="b-shadow" data-burst="53,41,48,30,12,0.78"/>
+            <polygon class="b-fill" data-burst="50,38,48,30,12,0.78"/>
+            <text x="50" y="46" text-anchor="middle">第<tspan id="round">1</tspan>轮</text>
+          </svg>
+          <p class="narr"><small id="game-no">第 1 局</small><span id="prompt-text"></span></p>
+        </div>
+
+        <div id="prompt-chips" class="clips" hidden>
+          <span id="chip-a" class="clip red"></span>
+          <span class="plus" aria-hidden="true">+</span>
+          <span id="chip-b" class="clip blue"></span>
+        </div>
+        <p id="last-votes" class="note-strip" hidden></p>
+
+        <form id="submit-form" class="row submit-row">
+          <div class="input-bubble">
+            <input id="word" class="input" maxlength="30" placeholder="写下你的词…" aria-label="你的词"
+                   autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="send">
+          </div>
+          <button id="submit-btn" class="sticker red" type="submit">提交!</button>
+        </form>
+
+        <div id="submitted" class="panel submitted" hidden>
+          <p>你写了 <span id="my-word" class="clip red small"></span></p>
+          <p class="dots-line"><span id="wait-text">等对方写完</span><span class="dots"><i>.</i><i>.</i><i>.</i></span></p>
+        </div>
+      </div>
+
+      <!-- 结果页：两个人一起看，各自选 -->
+      <div id="judge" hidden>
+        <p class="tape-label center-label">第 <b id="judge-round">1</b> 轮揭晓</p>
+        <div class="duel">
+          <figure class="say me">
+            <div class="say-bubble"><span id="jb-mine" class="word"></span></div>
+            <figcaption><span id="jb-me-av" class="av me">?</span>你</figcaption>
+          </figure>
+          <figure class="say them">
+            <div class="say-bubble"><span id="jb-theirs" class="word"></span></div>
+            <figcaption><span id="jb-opp-av" class="av them">?</span><span id="jb-opp-name">对方</span></figcaption>
+          </figure>
+          <svg class="burst bam" viewBox="0 0 90 70" aria-hidden="true">
+            <polygon class="b-shadow" data-burst="47,37,42,27,11,0.8"/>
+            <polygon class="b-fill" data-burst="45,35,42,27,11,0.8"/>
+            <text x="45" y="43" text-anchor="middle">BAM!</text>
+          </svg>
+        </div>
+        <div class="verdict"><span class="stamp">不一样</span></div>
+        <div class="panel ask">
+          <p class="ask-q">这两个词，你觉得意思一样吗？</p>
+          <div id="vote-buttons" class="vote-row">
+            <button id="vote-same" class="sticker yellow" type="button">我觉得一样 ≈</button>
+            <button id="vote-next" class="sticker" type="button">不一样，下一轮</button>
+          </div>
+          <p id="vote-status" class="ask-status"></p>
+        </div>
+      </div>
+
+      <!-- 结束 -->
+      <div id="result" class="panel result" hidden>
+        <svg class="burst win-burst" viewBox="0 0 260 112" aria-hidden="true">
+          <polygon class="b-shadow" data-burst="135,60,122,80,16,0.46"/>
+          <polygon class="b-fill" data-burst="130,55,122,80,16,0.46"/>
+          <text id="result-title" x="130" y="72" text-anchor="middle">同词!</text>
+        </svg>
+        <div id="merged" class="merged">
+          <svg viewBox="0 0 260 150" aria-hidden="true">
+            <ellipse class="mb-line" cx="130" cy="62" rx="112" ry="52"/>
+            <polygon class="mb-line" points="72,98 40,144 104,108"/>
+            <polygon class="mb-line" points="156,108 220,144 188,98"/>
+            <ellipse class="mb-fill" cx="130" cy="62" rx="109" ry="49"/>
+          </svg>
+          <span id="merged-word" class="merged-word word"></span>
+        </div>
+        <div id="merged-avs" class="merged-avs"><span id="r-me-av" class="av me">?</span><span id="r-opp-av" class="av them">?</span></div>
+        <div id="meaning" class="meaning" hidden>
+          <span id="mw-mine" class="clip red"></span>
+          <span class="approx" aria-label="约等于">≈</span>
+          <span id="mw-theirs" class="clip blue"></span>
+        </div>
+        <p id="result-line" class="narr"></p>
+        <button id="rematch" class="sticker red wide" type="button">再来一局</button>
+        <p id="rematch-hint" class="ask-status"></p>
+        <button id="export-btn" class="sticker yellow wide export-btn" type="button">导出本局用词图片</button>
+        <div id="past-games" class="past" hidden>
+          <p class="tag">本房间战绩</p>
+          <ol id="past-list"></ol>
+        </div>
+      </div>
+
+      <section class="history">
+        <p class="tape-label">回合记录</p>
+        <p id="history-empty" class="note-strip">还没有揭晓过的回合</p>
+        <ol id="history" class="strip"></ol>
+      </section>
+
+      <details id="used-box" class="used" hidden>
+        <summary class="tape-label">已用过的词 <span id="used-count" class="count"></span></summary>
+        <div id="used" class="used-list"></div>
+      </details>
+    </section>
+  </main>
+
+  <!-- 导出图片预览 -->
+  <div id="export-view" class="overlay" role="dialog" aria-modal="true" aria-label="本局用词图片" hidden>
+    <div class="panel export-card">
+      <img id="export-img" alt="本局用词图片">
+      <p class="ask-status">手机上也可以长按图片保存</p>
+      <div class="vote-row">
+        <button id="export-save" class="sticker red" type="button">保存图片</button>
+        <button id="export-close" class="sticker" type="button">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti" class="confetti" hidden></canvas>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

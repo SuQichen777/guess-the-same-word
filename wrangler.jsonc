@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "same-word",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-20",
+
+  // 静态前端：public/ 下的文件由 Workers Static Assets 直接返回（免费、不计 Worker 请求数）。
+  // 只有 /api/* 和 /ws/* 才会先进 Worker。
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/ws/*"]
+  },
+
+  "durable_objects": {
+    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
+  },
+
+  // 免费套餐只能用 SQLite 存储后端的 Durable Object，所以这里必须是 new_sqlite_classes。
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+
+  "observability": { "enabled": true }
+}

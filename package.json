@@ -1,0 +1,20 @@
+{
+  "name": "same-word",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "同词相遇：双人在线猜同词小游戏（Cloudflare Workers + Durable Objects）",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "typecheck": "wrangler types && tsc --noEmit",
+    "test:smoke": "node scripts/smoke-test.mjs",
+    "fonts": "node scripts/build-fonts.mjs"
+  },
+  "devDependencies": {
+    "subset-font": "^2.9.0",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.156.2"
+  }
+}
